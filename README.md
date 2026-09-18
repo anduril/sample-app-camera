@@ -74,7 +74,21 @@ Configurations are set in `.env`. Malformed value fail at startup, rather than f
 to a default. `TASK_START_COMMAND` and `TASK_STOP_COMMAND` must match the
 `sudoers` rule that you set.
 
+## Tasking
+
+This integration uses two tasks, defined in the Lattice Schema Registry (LSR):
+- [Start](https://schema-registry.developer.anduril.com/anduril/sample-app-camera/docs/main%3Aanduril.sample_app_camera.camera.v1alpha#anduril.sample_app_camera.camera.v1alpha.Start): Runs the MediaMTX daemon that pushes the camera feed the Lattice SRT endpoint. 
+- [Stop](https://schema-registry.developer.anduril.com/anduril/sample-app-camera/docs/main%3Aanduril.sample_app_camera.camera.v1alpha#anduril.sample_app_camera.camera.v1alpha.Stop): Stops the daemon, deletes the ingress stream in Lattice, and clears the entity media items list.
+    
+If you [create your own custom tasks](https://developer.anduril.com/guides/tasks/define-a-task) to use with this app,
+push the new task definitions once:
+
+1. Run `export BUF_TOKEN=<token>@schema-registry.developer.anduril.com`.
+2. Run `cd task-def && buf lint && buf build && buf push`.
+
 ## Run and verify
+
+To run and verify the app, do the following:
 
 ```bash
 .venv/bin/lattice-cam --config .env                      # or the systemd unit
@@ -82,9 +96,6 @@ to a default. `TASK_START_COMMAND` and `TASK_STOP_COMMAND` must match the
 .venv/bin/python scripts/send_task.py --config .env Stop  # SENT -> EXECUTING -> DONE_OK; then Start
 make check                                                # ruff, mypy, pytest
 ```
-
-Push the task definitions once: `export BUF_TOKEN=<token>@schema-registry.developer.anduril.com`,
-then `cd task-def && buf lint && buf build && buf push`.
 
 ## Deploy
 
