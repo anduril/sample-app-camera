@@ -77,7 +77,7 @@ to a default. `TASK_START_COMMAND` and `TASK_STOP_COMMAND` must match the
 ## Tasking
 
 This integration uses two tasks, defined in the Lattice Schema Registry (LSR):
-- [Start](https://schema-registry.developer.anduril.com/anduril/sample-app-camera/docs/main%3Aanduril.sample_app_camera.camera.v1alpha#anduril.sample_app_camera.camera.v1alpha.Start): Runs the MediaMTX daemon that pushes the camera feed the Lattice SRT endpoint. 
+- [Start](https://schema-registry.developer.anduril.com/anduril/sample-app-camera/docs/main%3Aanduril.sample_app_camera.camera.v1alpha#anduril.sample_app_camera.camera.v1alpha.Start): Runs the MediaMTX daemon that pushes video to the Lattice SRT endpoint. 
 - [Stop](https://schema-registry.developer.anduril.com/anduril/sample-app-camera/docs/main%3Aanduril.sample_app_camera.camera.v1alpha#anduril.sample_app_camera.camera.v1alpha.Stop): Stops the daemon, deletes the ingress stream in Lattice, and clears the entity media items list.
     
 If you [create your own custom tasks](https://developer.anduril.com/guides/tasks/define-a-task) to use with this app,
