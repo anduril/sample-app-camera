@@ -1,12 +1,13 @@
 # lattice-cam
 
-This example demonstrates a Raspberry Pi camera integration with Lattice using the Python gRPC (Connect) SDK.
-The camera appears as a stationary asset with an electro-optical (EO) sensor, a live [SRT](https://www.haivision.com/products/srt-secure-reliable-transport/) video ingress, real-time health reporting, and support for two custom [Lattice tasks](https://developer.anduril.com/guides/tasks/overview), `Start` and `Stop`.
+This sample app demonstrates a Raspberry Pi integration with Lattice using the Lattice SDK for Python gRPC (Connect).
+The camera is represented in Lattice as a stationary asset with an electro-optical (EO) sensor, a live [SRT](https://www.haivision.com/products/srt-secure-reliable-transport/) video, real-time health reporting, and support for two custom [Lattice tasks](https://developer.anduril.com/guides/tasks/overview), `Start` and `Stop`.
 
-Two systemd units run on the Pi. The Python daemon publishes the entity at
-1 Hz, registers the SRT ingress, listens for tasks as a Lattice agent, samples
-health, and starts and stops the second unit: MediaMTX, which captures the Pi
-Camera and pushes H.264 over SRT to the ingress URL Lattice returned.
+The app is comprised of two systemd units that run on the Pi:
+
+1. A Python daemon publishes the entity at 1 Hz, registers the SRT ingress, listens for tasks as a Lattice agent, samples
+    health, and handles tasking of the camera.
+2. A MediaMTX daemon, which captures the Pi camera and pushes H.264 over SRT to the ingress endpoint it receives from Lattice.
 
 For more information about the Lattice SDK, see the [Lattice SDK documentation](https://developer.anduril.com/).
 To apply as an organization for access to the Lattice Developer Experience, see the [developer dashboard](https://dashboard.developer.anduril.com/).
