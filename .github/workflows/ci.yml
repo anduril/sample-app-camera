@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
+    branches: [master]
   pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -12,9 +17,9 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -37,6 +42,12 @@ jobs:
 
       - name: Type check
         run: mypy
+
+      - name: Check app loads
+        run: |
+          lattice-cam --help
+          python scripts/verify.py --help
+          python scripts/send_task.py --help
 
       - name: Test
         run: pytest -q

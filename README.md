@@ -57,6 +57,10 @@ Other Raspberry Pi boards and libcamera-compatible camera
 modules are likely to work but are untested. For more infomration on setting up your Raspberry Pi, see the
 [official documentation](https://www.raspberrypi.com/documentation/computers/camera_software.html).
 
+## Before you begin
+
+Ensure you have [set up your development environment](https://developer.anduril.com/guides/getting-started/set-up).
+
 ## Setup
 
 ```bash
@@ -135,4 +139,8 @@ sudo rm /etc/systemd/system/rpi-cam-lattice-service.service /etc/sudoers.d/rpi-c
 The derived entity id also changes with the name. An install that keeps its
 `state.json` keeps its old, while a new install, or one
 that lost the state file publishes a new entity, and the old one expires.
+
+## License
+
+This project is licensed under the terms of the [Anduril Lattice SDK License Agreement](LICENSE.md).
 
