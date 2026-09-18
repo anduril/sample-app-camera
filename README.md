@@ -40,6 +40,21 @@ scripts/         install.sh, install-mediamtx.sh, verify.py, send_task.py
 tests/           one file per package; fakes only, nothing talks to Lattice
 ```
 
+## Hardware requirements
+
+This integration has been validated on the following hardware:
+
+- [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/)
+- [Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) with a 12-megapixel Sony IMX708 image sensor
+
+The camera connects to the Pi over the CSI ribbon cable and must be enabled in
+the Pi's camera stack — `rpicam-hello` should produce a preview before you run
+this integration.
+
+Other Raspberry Pi boards and libcamera-compatible camera
+modules are likely to work but are untested. For more infomration on setting up your Raspberry Pi, see the
+[official documentation](https://www.raspberrypi.com/documentation/computers/camera_software.html)
+
 ## Setup
 
 ```bash
