@@ -53,7 +53,7 @@ this integration.
 
 Other Raspberry Pi boards and libcamera-compatible camera
 modules are likely to work but are untested. For more infomration on setting up your Raspberry Pi, see the
-[official documentation](https://www.raspberrypi.com/documentation/computers/camera_software.html)
+[official documentation](https://www.raspberrypi.com/documentation/computers/camera_software.html).
 
 ## Setup
 
