@@ -1,0 +1,22 @@
+# sudoers drop-in for lattice-cam.
+#
+# The daemon runs unprivileged (User=@SERVICE_USER@ in the systemd unit) and handles
+# Lattice Start/Stop tasks by running TASK_START_COMMAND / TASK_STOP_COMMAND
+# from .env, which default to:
+#   sudo systemctl restart mediamtx-srt
+#   sudo systemctl stop mediamtx-srt
+# This rule lets that account run those two commands, and nothing
+# else, without a password. Keep the command strings identical to the ones in
+# .env (sudo matches the full command line).
+#
+# PLACEHOLDER: @SERVICE_USER@ is the account in User= of
+# deploy/systemd/lattice-cam.service; `make install-units` renders
+# it (default: the invoking user).
+#
+# Validate, then install with mode 0440 (or run `make install-units`):
+#   visudo -cf build/deploy/sudoers.d/lattice-cam   # the rendered file
+#   sudo install -m 0440 -o root -g root build/deploy/sudoers.d/lattice-cam /etc/sudoers.d/lattice-cam
+# Verify as the service account:
+#   sudo -n -l | grep mediamtx-srt
+
+@SERVICE_USER@ ALL=(root) NOPASSWD: /usr/bin/systemctl restart mediamtx-srt, /usr/bin/systemctl stop mediamtx-srt

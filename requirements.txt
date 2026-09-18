@@ -1,0 +1,19 @@
+# Anduril Lattice SDK - Buf Schema Registry generated Python packages.
+# These live on Anduril's schema-registry index, not PyPI.
+--extra-index-url https://schema-registry.developer.anduril.com/gen/python
+
+# Both packages are pinned to the exact builds the code was validated against
+# (the local version label after "+" is the BSR commit). Bump both together
+# and keep pyproject.toml in sync.
+# Protobuf message classes (anduril.*.pub_pb2 style modules)
+anduril-lattice-sdk-bufbuild-py==0.3.0.1.20260911022018+6ddd10d2bd0b
+# Connect RPC Python client stubs (EntityManagerAPI, etc.)
+anduril-lattice-sdk-connectrpc-py==0.11.1.2.20260911022018+6ddd10d2bd0b
+
+# Config loading
+python-dotenv
+
+# Validated against (installed in .venv on 2026-09-16):
+#   anduril-lattice-sdk-bufbuild-py   0.3.0.1.20260911022018+6ddd10d2bd0b
+#   anduril-lattice-sdk-connectrpc-py 0.11.1.2.20260911022018+6ddd10d2bd0b
+#   connectrpc 0.12.1 (Connect runtime, pulled transitively; backed by pyqwest 0.10.0)

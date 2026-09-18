@@ -1,0 +1,130 @@
+###############################################
+# MediaMTX configuration — SRT push server (Raspberry Pi Camera)
+#
+# Captures the Raspberry Pi Camera and PUSHES the encoded stream as SRT
+# (caller mode) to a destination, using ffmpeg as the egress transport
+# (kicked off by a runOnReady hook).
+#
+# The SRT destination is taken from the $SRT_TARGET environment variable,
+# which the lattice-cam writes (the SRT ingress URL returned by
+# Lattice's VideoManager CreateIngressStream) to an EnvironmentFile the
+# systemd unit loads. Example value:
+#   srt://your-lattice-host:8890?streamid=publish:xyz&mode=caller&pkt_size=1316
+#
+# After changing config, restart the service:
+#   sudo systemctl restart mediamtx-srt
+###############################################
+
+###############################################
+# Global settings -> General
+
+logLevel: info
+logDestinations: [stdout]
+logFile: mediamtx.log
+sysLogPrefix: mediamtx-srt
+
+readTimeout: 10s
+writeTimeout: 10s
+writeQueueSize: 512
+udpMaxPayloadSize: 1452
+
+###############################################
+# Global settings -> Authentication
+
+authMethod: internal
+authInternalUsers:
+- user: any
+  pass:
+  ips: []
+  permissions:
+  - action: publish
+    path:
+  - action: read
+    path:
+  - action: playback
+    path:
+- user: any
+  pass:
+  ips: ['127.0.0.1', '::1']
+  permissions:
+  - action: api
+  - action: metrics
+  - action: pprof
+
+###############################################
+# Global settings -> Servers
+#
+# Only a localhost RTSP listener is enabled, purely so the egress ffmpeg can
+# pull the camera stream and re-emit it as SRT. This server PUSHES SRT out
+# (caller), so it does NOT run an SRT listener.
+rtsp: yes
+rtspTransports: [tcp]
+rtspEncryption: "no"
+rtspAddress: 127.0.0.1:30202
+
+rtmp: no
+hls: no
+webrtc: no
+srt: no
+
+# The control API is enabled on localhost only so lattice-cam can
+# probe the real state of the "cam" path (GET /v3/paths/get/cam: ready flag,
+# attached readers, bytes received) and report observed rather than intended
+# camera health. The authInternalUsers entry above grants the `api` action to
+# 127.0.0.1/::1 only. Keep apiAddress in sync with MEDIAMTX_API_URL in .env.
+api: yes
+apiAddress: 127.0.0.1:9997
+metrics: no
+pprof: no
+playback: no
+
+###############################################
+# Default path settings
+
+pathDefaults:
+  source: publisher
+  sourceOnDemand: no
+  overridePublisher: yes
+  record: no
+
+  # Raspberry Pi Camera defaults.
+  rpiCameraCamID: 0
+  rpiCameraWidth: 1920
+  rpiCameraHeight: 1080
+  rpiCameraHFlip: false
+  rpiCameraVFlip: false
+  rpiCameraFPS: 30
+  rpiCameraAfMode: continuous
+  rpiCameraCodec: auto
+  rpiCameraIDRPeriod: 60
+  rpiCameraBitrate: 5000000
+  rpiCameraHardwareH264Profile: main
+  rpiCameraHardwareH264Level: '4.1'
+
+###############################################
+# Path settings
+#
+# The "cam" path is published by the Pi Camera. When ready, ffmpeg:
+#   1. pulls the H264 from the local RTSP listener,
+#   2. copies the codec (no re-encode — low CPU on the Pi),
+#   3. wraps it in MPEG-TS,
+#   4. pushes it over SRT (caller) to $SRT_TARGET.
+#
+# runOnReady runs in a shell with the process environment, so $SRT_TARGET is
+# expanded from the environment (set via the systemd EnvironmentFile).
+
+paths:
+  cam:
+    source: rpiCamera
+
+    runOnReady: >-
+      ffmpeg -hide_banner -loglevel warning
+      -rtsp_transport tcp
+      -i rtsp://127.0.0.1:30202/$MTX_PATH
+      -c copy
+      -f mpegts
+      -flush_packets 0
+      "$SRT_TARGET"
+    runOnReadyRestart: yes
+
+  all_others:

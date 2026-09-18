@@ -1,0 +1,56 @@
+# systemd unit for MediaMTX, the SRT pusher that feeds the Lattice video ingress.
+#
+# THIS UNIT IS NOT MEANT TO BE ENABLED. It has no [Install] section on purpose,
+# so `systemctl enable mediamtx-srt` fails. lattice-cam owns the
+# media pipeline: a Lattice Start task makes the daemon create a fresh video
+# ingress, write its push URL to srt_target.env and then run
+# `sudo systemctl restart mediamtx-srt` (TASK_START_COMMAND); a Stop task runs
+# `sudo systemctl stop mediamtx-srt` (TASK_STOP_COMMAND).
+#
+# `After=` only orders against the daemon
+# *process* starting, not against the daemon having written srt_target.env
+# (which only exists once a Start task has been handled), so the mandatory
+# EnvironmentFile= was missing and the unit went into a restart loop.
+#
+# Install (or run `make install-units` from the repo root):
+#   sudo install -m 0644 deploy/systemd/mediamtx-srt.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+# If a previous version was enabled: sudo systemctl disable --now mediamtx-srt
+#
+# PLACEHOLDER: @INSTALL_DIR@ is the checkout path; `make install-units`
+# renders it. Keep the srt_target.env path in sync with SRT_TARGET_FILE in .env.
+
+[Unit]
+Description=MediaMTX SRT Push Server (Raspberry Pi Camera)
+# The camera can only be opened by one process at a time - stop any other
+# camera unit first.
+After=network-online.target lattice-cam.service
+Wants=network-online.target
+# Belt and braces: if the SRT target has not been written yet, a start is
+# *skipped* (condition failed, unit stays inactive) instead of *failing* and
+# looping through Restart=. The daemon always writes the file before it
+# restarts this unit, so in normal operation the condition is always met.
+ConditionPathExists=@INSTALL_DIR@/srt_target.env
+
+[Service]
+# Bounded so the daemon's Stop task and its own shutdown never wait on a
+# hung ffmpeg for systemd's 90 s default.
+TimeoutStopSec=10
+Type=simple
+WorkingDirectory=@INSTALL_DIR@
+# The SRT push destination, written by lattice-cam as
+# SRT_TARGET=<url>. It changes on every Start task (a new Lattice ingress each
+# time), which is why the daemon *restarts* this unit rather than starting it.
+# The leading "-" makes a missing file non-fatal (ConditionPathExists above
+# already prevents that case; the dash keeps the unit loadable and
+# `systemd-analyze verify` quiet when the file does not exist).
+EnvironmentFile=-@INSTALL_DIR@/srt_target.env
+ExecStart=@INSTALL_DIR@/mediamtx @INSTALL_DIR@/mediamtx.yml
+# Restart=always covers MediaMTX crashes *while streaming*; it does not apply
+# to a start skipped by ConditionPathExists, and `systemctl stop` (the Stop
+# task) also clears it.
+Restart=always
+RestartSec=5
+
+# No [Install] section: this unit is started and stopped by
+# lattice-cam only (see the header comment).

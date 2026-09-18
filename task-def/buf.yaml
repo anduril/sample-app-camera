@@ -1,0 +1,22 @@
+# Buf module for the lattice-cam custom task definitions.
+#
+# Push to the Lattice Schema Registry (LSR) from this directory:
+#   buf lint && buf build && buf push
+#
+# The module name is <registry>/<owner>/<repository>. The owner is the LSR
+# user or organization that owns the repository, and the repository must
+# exist in the LSR dashboard before the first push. If you change the owner
+# or repository, also change the `package` line in every .proto file (the
+# convention is <owner>.<repository>.<package>.<version>, with hyphens in the
+# repository name written as underscores), move the files to
+# the matching directory, and update TASK_PACKAGE in .env.
+version: v2
+modules:
+  - path: .
+    name: schema-registry.developer.anduril.com/anduril/sample-app-camera
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

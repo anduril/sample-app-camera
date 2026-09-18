@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Custom Lattice task definitions for lattice-cam.
+//
+// Fully qualified names (and the type URLs advertised in the entity's
+// task_catalog) are:
+//   type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Start
+//   type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Stop
+//
+// Both tasks are intentionally empty: the agent acts purely on the message
+// *name* carried in the task specification's type URL. Parameters can be added
+// later as new fields without breaking existing consumers.
+package anduril.sample_app_camera.camera.v1alpha;
+
+// Start the camera's video stream (the MediaMTX SRT push to Lattice) and
+// report the camera sensor as operational.
+message Start {}
+
+// Stop the camera's video stream and report the camera sensor as off.
+message Stop {}
