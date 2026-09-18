@@ -1,13 +1,15 @@
 # lattice-cam
 
-A Raspberry Pi camera published to Lattice with the Python gRPC (Connect) SDK.
-The camera appears as a stationary asset with an EO sensor, a live SRT video
-ingress, per-component health, and two custom tasks, `Start` and `Stop`.
+This example demonstrates a Raspberry Pi camera integration with Lattice using the Python gRPC (Connect) SDK.
+The camera appears as a stationary asset with an electro-optical (EO) sensor, a live [SRT](https://www.haivision.com/products/srt-secure-reliable-transport/) video ingress, real-time health reporting, and support for two custom [Lattice tasks](https://developer.anduril.com/guides/tasks/overview), `Start` and `Stop`.
 
 Two systemd units run on the Pi. The Python daemon publishes the entity at
 1 Hz, registers the SRT ingress, listens for tasks as a Lattice agent, samples
 health, and starts and stops the second unit: MediaMTX, which captures the Pi
 Camera and pushes H.264 over SRT to the ingress URL Lattice returned.
+
+For more information about the Lattice SDK, see the [Lattice SDK documentation](https://developer.anduril.com/).
+To apply as an organization for access to the Lattice Developer Experience, see the [developer dashboard](https://dashboard.developer.anduril.com/).
 
 ```mermaid
 flowchart LR
@@ -134,19 +136,3 @@ The derived entity id also changes with the name. An install that keeps its
 `state.json` keeps its old, while a new install, or one
 that lost the state file publishes a new entity, and the old one expires.
 
-## Add a new component
-
-Health is the worked example. Each step lives in `health/`:
-
-1. Plain-Python report types, no protobuf (`report.py`).
-2. Probes with a single `sample(now)` that never raises and takes its inputs
-   as constructor arguments, so tests use fixtures (`probes.py`).
-3. A sampler with a `run(stop)` method, which `Service` runs on its own thread,
-   caching a `snapshot()` that never blocks (`sampler.py`).
-4. A contributor that maps the snapshot onto the SDK message (`contributor.py`).
-5. Two lines in `main.py`:
-
-```python
-contributors.append(HealthContributor(sampler.snapshot))
-workers.append(("health", sampler.run))
-```
