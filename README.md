@@ -28,19 +28,19 @@ flowchart LR
 
 ```
 src/lattice_cam/
-  main.py        wiring only
-  config.py      strict .env parsing
+  main.py        app wiring 
+  config.py      validation and .env parsing
   state.py       JSON state: ingress record, created_time
-  runtime.py     1 Hz publish loop, workers, offline publish at shutdown
-  lattice/       transport, auth, one thin client per API (.entities .video .tasks)
-  entity/        base entity + one contributor per component (the extension seam)
+  runtime.py     handles 1 Hz publish loop, workers, and offline publish at shutdown
+  lattice/       transport, auth, one thin client per API
+  entity/        base entity + one contributor per component
   camera/        pipeline (MediaMTX commands + status probe), Start/Stop control, ingress
-  tasking/       ListenAsAgent stream, dispatch, status lifecycle
-  health/        probes -> sampler worker -> snapshot -> Health contributor
-task-def/        Start/Stop protobuf definitions (Buf module for the Schema Registry)
-deploy/          systemd unit templates and the sudoers drop-in
-scripts/         install.sh, install-mediamtx.sh, verify.py, send_task.py
-tests/           one file per package; fakes only, nothing talks to Lattice
+  tasking/       ListenAsAgent stream, dispatch, and status lifecycle
+  health/        handles probes, to sampler worker, to snapshot, and finally Health contributor workflow
+task-def/        Start/Stop protobuf definitions (Buf module for the Lattice  Schema Registry)
+deploy/          systemd unit templates and the sudoers 
+scripts/         installation and test scripts
+tests/           mocked unit tests configured per package
 ```
 
 ## Hardware requirements
