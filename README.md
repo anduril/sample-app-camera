@@ -1,12 +1,13 @@
 # lattice-cam
 
-This example demonstrates a Raspberry Pi camera integration with Lattice using the Python gRPC (Connect) SDK.
-The camera appears as a stationary asset with an electro-optical (EO) sensor, a live [SRT](https://www.haivision.com/products/srt-secure-reliable-transport/) video ingress, real-time health reporting, and support for two custom [Lattice tasks](https://developer.anduril.com/guides/tasks/overview), `Start` and `Stop`.
+This sample app demonstrates a Raspberry Pi integration with Lattice using the Lattice SDK for Python gRPC (Connect).
+The camera is represented in Lattice as a stationary asset with an electro-optical (EO) sensor, a live [SRT](https://www.haivision.com/products/srt-secure-reliable-transport/) video, real-time health reporting, and support for two custom [Lattice tasks](https://developer.anduril.com/guides/tasks/overview), `Start` and `Stop`.
 
-Two systemd units run on the Pi. The Python daemon publishes the entity at
-1 Hz, registers the SRT ingress, listens for tasks as a Lattice agent, samples
-health, and starts and stops the second unit: MediaMTX, which captures the Pi
-Camera and pushes H.264 over SRT to the ingress URL Lattice returned.
+The app is comprised of two systemd units that run on the Pi:
+
+1. A Python daemon publishes the entity at 1 Hz, registers the SRT ingress, listens for tasks as a Lattice agent, samples
+    health, and handles tasking of the camera.
+2. A MediaMTX daemon, which captures the Pi camera and pushes H.264 over SRT to the ingress endpoint it receives from Lattice.
 
 For more information about the Lattice SDK, see the [Lattice SDK documentation](https://developer.anduril.com/).
 To apply as an organization for access to the Lattice Developer Experience, see the [developer dashboard](https://dashboard.developer.anduril.com/).
@@ -69,10 +70,9 @@ cp .env.example .env           # every key is documented there; set the camera p
 ./scripts/install-mediamtx.sh  # on the Pi: fetch the MediaMTX binary
 ```
 
-Config comes from `.env` (or real environment variables, which win) and is
-validated strictly: a malformed value fails at startup rather than falling back
+Configurations are set in `.env`. Malformed value fail at startup, rather than falling back
 to a default. `TASK_START_COMMAND` and `TASK_STOP_COMMAND` must match the
-sudoers rule byte for byte.
+`sudoers` rule that you set.
 
 ## Run and verify
 
@@ -89,19 +89,14 @@ then `cd task-def && buf lint && buf build && buf push`.
 ## Deploy
 
 The files under `deploy/` are templates. `make install-units` renders
-`@INSTALL_DIR@` and `@SERVICE_USER@` (defaults: this checkout and the invoking
-user), validates the sudoers rule, installs both units, and reloads systemd.
+`@INSTALL_DIR@` and `@SERVICE_USER@`, validates the sudoers rule, installs both units,
+and reloads systemd.
 
 ```bash
 make install-units [SERVICE_USER=rpi-cam INSTALL_DIR=/opt/lattice-cam]
 sudo systemctl enable --now lattice-cam
 journalctl -u lattice-cam -u mediamtx-srt -f
 ```
-
-The daemon runs unprivileged and may run exactly two commands through sudo:
-`systemctl restart mediamtx-srt` and `systemctl stop mediamtx-srt`. Never
-enable `mediamtx-srt`; it has no `[Install]` section on purpose, because only
-the daemon knows when a valid `srt_target.env` exists.
 
 ## Upgrade
 
@@ -114,31 +109,8 @@ sudo systemctl restart lattice-cam                 # stops MediaMTX, archives th
 .venv/bin/python scripts/verify.py --config .env   # confirm the entity reads back as expected
 ```
 
-The daemon persists its ingress record in `state.json`, so an ingress left by
-the old process is archived at startup. Check `.env.example` after an upgrade
-for new keys; they all have defaults, so an old `.env` keeps working.
-
-If the previous install ran the daemon as root or had `mediamtx-srt` enabled,
-run these first:
-
-```bash
-sudo chown "$USER:$USER" srt_target.env      # root-owned file from the old run
-sudo systemctl disable --now mediamtx-srt    # the daemon starts it from now on
-```
-
-The unit, sudoers rule and console script were renamed from
-`rpi-cam-lattice-service` to `lattice-cam`. On an install that predates the
-rename, retire the old names before `make install-units`:
-
-```bash
-sudo systemctl disable --now rpi-cam-lattice-service
-sudo rm /etc/systemd/system/rpi-cam-lattice-service.service /etc/sudoers.d/rpi-cam-lattice-service
-.venv/bin/pip uninstall -y rpi-cam-lattice-service   # drops the old console script
-```
-
-The derived entity id also changes with the name. An install that keeps its
-`state.json` keeps its old, while a new install, or one
-that lost the state file publishes a new entity, and the old one expires.
+The service persists its state in `state.json`, so an ingress endpoint left by
+the old process is archived at startup.
 
 ## License
 
