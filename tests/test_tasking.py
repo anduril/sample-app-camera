@@ -22,7 +22,7 @@ from protobuf.wkt import any_pb
 from lattice_cam.tasking.definitions import task_name_from_type_url, task_type_url
 from lattice_cam.tasking.handler import TaskHandler, TaskStreamState
 
-PACKAGE = "anduril.sample_app_rpi_cam.camera.v1alpha"
+PACKAGE = "anduril.sample_app_camera.camera.v1alpha"
 AGENT = "rpi-cam-01"
 
 
@@ -135,7 +135,7 @@ def _drain_threads():
 
 def test_type_url_helpers():
     url = task_type_url(PACKAGE, "Start")
-    assert url == "type.googleapis.com/anduril.sample_app_rpi_cam.camera.v1alpha.Start"
+    assert url == "type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Start"
     assert task_name_from_type_url(url) == "Start"
 
 

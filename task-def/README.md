@@ -5,8 +5,8 @@ Lattice Schema Registry (LSR) with the Buf CLI.
 
 | Message | Type URL | Meaning |
 |---|---|---|
-| `Start` | `type.googleapis.com/anduril.sample_app_rpi_cam.camera.v1alpha.Start` | start the video stream |
-| `Stop`  | `type.googleapis.com/anduril.sample_app_rpi_cam.camera.v1alpha.Stop`  | stop the video stream |
+| `Start` | `type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Start` | start the video stream |
+| `Stop`  | `type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Stop`  | stop the video stream |
 
 Both messages are empty; the agent dispatches on the type URL alone.
 
@@ -14,7 +14,7 @@ Both messages are empty; the agent dispatches on the type URL alone.
 
 ```bash
 # 1) Create the repository once in the LSR dashboard
-#    (https://schema-registry.developer.anduril.com): owner `anduril`, name `sample-app-rpi-cam`,
+#    (https://schema-registry.developer.anduril.com): owner `anduril`, name `sample-app-camera`,
 #    private. If you use an organization instead, see buf.yaml.
 # 2) Authenticate with a token created under Settings in the dashboard
 #    (keep it out of the repo and shell history).

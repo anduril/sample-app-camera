@@ -138,8 +138,10 @@ class Config:
     tasking_enabled: bool = True
     # Protobuf package of the custom task definitions pushed to the Lattice
     # Schema Registry (see task-def/). Type URLs are
-    # type.googleapis.com/<package>.Start and .Stop.
-    task_package: str = "anduril.sample_app_rpi_cam.camera.v1alpha"
+    # type.googleapis.com/<package>.Start and .Stop. Must match the ``package``
+    # declaration in task-def/**/camera_tasks.proto
+    # (tests/test_task_package_consistency.py guards this invariant).
+    task_package: str = "anduril.sample_app_camera.camera.v1alpha"
     # Shell commands run to start/stop the video stream (empty = state only).
     task_start_command: str = ""
     task_stop_command: str = ""

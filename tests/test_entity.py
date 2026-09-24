@@ -30,8 +30,8 @@ from lattice_cam.health import HealthContributor
 NOW = datetime(2026, 9, 16, 12, 0, 0, tzinfo=UTC)
 CREATED = NOW - timedelta(hours=1)
 URLS = [
-    "type.googleapis.com/anduril.sample_app_rpi_cam.camera.v1alpha.Start",
-    "type.googleapis.com/anduril.sample_app_rpi_cam.camera.v1alpha.Stop",
+    "type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Start",
+    "type.googleapis.com/anduril.sample_app_camera.camera.v1alpha.Stop",
 ]
 
 
