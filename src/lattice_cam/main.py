@@ -239,14 +239,16 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("failed to initialize Lattice client", error=str(exc))
         return 1
 
-    state = StateStore(config.state_file)
-    # A UUID that survives restarts: ENTITY_ID, else the previous run's id,
-    # else one derived from the board serial (entity/identity.py).
-    config.entity_id = resolve_entity_id(config, state, pi_serial_number())
-    pipeline = _build_pipeline(config)
-    control = _build_control(client, config, state, pipeline, logger)
+    control: CameraControl | None = None
     runtime: Runtime | None = None
     try:
+        state = StateStore(config.state_file)
+        # A UUID that survives restarts: ENTITY_ID, else the previous run's id,
+        # else one derived from the board serial (entity/identity.py).
+        config.entity_id = resolve_entity_id(config, state, pi_serial_number())
+        pipeline = _build_pipeline(config)
+        control = _build_control(client, config, state, pipeline, logger)
+
         source = CameraSource(
             latitude_degrees=config.camera_latitude,
             longitude_degrees=config.camera_longitude,
@@ -298,9 +300,13 @@ def main(argv: list[str] | None = None) -> int:
         _initial_start(control, logger)
         return runtime.run()
     finally:
-        # Leave nothing pushing at, or advertised as, a stream that no longer
-        # has a producer, and tell operators the asset went offline on purpose.
-        control.shutdown()
+        # Close the client even when startup fails part-way (for example a
+        # state file that cannot be resolved), so a failed boot never leaks
+        # the transport. Leave nothing pushing at, or advertised as, a stream
+        # that no longer has a producer, and tell operators the asset went
+        # offline on purpose.
+        if control is not None:
+            control.shutdown()
         if runtime is not None:
             runtime.publish_offline()
         client.close()
