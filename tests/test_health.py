@@ -746,7 +746,6 @@ def test_sampler_logs_only_status_changes(caplog):
 def test_run_samples_until_stopped():
     probe = _Fixed()
     stop = threading.Event()
-    sampler = HealthSampler([probe], interval_s=0.01, clock=lambda: NOW)
 
     class _Stopper(ProbeBase):
         components = ()

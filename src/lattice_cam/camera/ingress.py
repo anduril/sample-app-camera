@@ -84,10 +84,19 @@ class VideoIngress:
         Raises on failure and leaves the previous state untouched. If an
         ingress already exists it is returned as-is (create is idempotent
         within a Start).
+
+        A persisted record that no live in-memory ingress owns -- the
+        ingress of a previous process, or one a failed ``recover`` could not
+        archive -- is archived first. Registering a new ingress would
+        otherwise overwrite the only reference to it and leak it in Lattice;
+        if that archive fails, ``create`` raises so the caller retries
+        instead of leaking.
         """
         existing = self.info
         if existing is not None:
             return existing
+
+        self._archive_pending_orphan()
 
         ingress_id = str(uuid.uuid4())
         info = self._client.video.create_srt_ingress(
@@ -128,13 +137,13 @@ class VideoIngress:
         """Archive an ingress left behind by a previous process, if any.
 
         Reads the persisted record and archives it best-effort. Never raises:
-        a failure keeps the record so the next boot retries. Does nothing when
-        this instance already owns a live ingress.
+        a failure keeps the record so the next boot (or the next ``create``)
+        retries. Does nothing when this instance already owns a live ingress.
         """
         if self._state is None:
             return
-        record = self._state.get(STATE_KEY)
-        if not isinstance(record, dict) or not record.get("video_id"):
+        record = self._pending_record()
+        if record is None:
             return
         video_id = str(record["video_id"])
         if self.video_id is not None:
@@ -158,6 +167,35 @@ class VideoIngress:
         self._clear_record()
 
     # -- internals -----------------------------------------------------------
+
+    def _pending_record(self) -> dict[str, Any] | None:
+        """The persisted ingress record when it names a video id, else ``None``."""
+        if self._state is None:
+            return None
+        record = self._state.get(STATE_KEY)
+        if not isinstance(record, dict) or not record.get("video_id"):
+            return None
+        return record
+
+    def _archive_pending_orphan(self) -> None:
+        """Archive and forget a persisted ingress this instance does not own.
+
+        Raises if Lattice cannot archive it and leaves the record in place, so
+        the caller retries rather than registering a second live ingress and
+        overwriting the only reference to this one.
+        """
+        record = self._pending_record()
+        if record is None:
+            return
+        video_id = str(record["video_id"])
+        logger.warning(
+            "archiving orphaned SRT ingress before registering a new one",
+            video_id=video_id,
+            created_at=record.get("created_at"),
+        )
+        self._client.video.delete_srt_ingress(video_id)
+        logger.info("archived orphaned SRT ingress", video_id=video_id)
+        self._clear_record()
 
     def _persist(self, info: SrtIngressInfo) -> None:
         if self._state is None:

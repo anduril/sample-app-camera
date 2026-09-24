@@ -256,6 +256,66 @@ def test_create_persists_the_ingress_record(tmp_path):
     assert StateStore(str(tmp_path / "state.json")).get(STATE_KEY) == record
 
 
+def test_create_archives_a_pending_orphan_before_registering_a_new_ingress(tmp_path):
+    """A record with no live in-memory ingress names an orphan; archiving it
+    before registering the new one is what stops it leaking in Lattice."""
+    state = StateStore(str(tmp_path / "state.json"))
+    state.set(STATE_KEY, {"video_id": "old#7", "push_url": "srt://old", "session_id": "s"})
+    client = FakeClient()
+    video = VideoIngress(
+        client, title="cam", srt_target_file=str(tmp_path / "srt_target.env"), state=state
+    )
+
+    info = video.create()
+
+    assert [c[0] for c in client.calls] == ["delete", "create"]
+    assert client.calls[0][1] == "old#7"
+    assert info.video_id == video.video_id
+    assert state.get(STATE_KEY)["video_id"] == info.video_id
+
+
+def test_create_keeps_a_pending_orphan_and_raises_when_it_cannot_be_archived(tmp_path):
+    state = StateStore(str(tmp_path / "state.json"))
+    record = {"video_id": "old#7", "push_url": "srt://old", "session_id": "s"}
+    state.set(STATE_KEY, record)
+    client = FakeClient(fail_delete=True)
+    video = VideoIngress(
+        client, title="cam", srt_target_file=str(tmp_path / "srt_target.env"), state=state
+    )
+
+    with pytest.raises(RuntimeError, match="VideoManager unavailable"):
+        video.create()
+
+    assert [c[0] for c in client.calls] == ["delete"]  # never registered a second ingress
+    assert video.video_id is None
+    assert state.get(STATE_KEY) == record  # kept so a retry can still archive it
+
+
+def test_start_after_a_failed_recovery_does_not_leak_the_orphan(tmp_path):
+    """The boot sequence recovers then starts. If recovery could not archive the
+    orphan, start must retry and fail rather than overwrite the only record."""
+    state = StateStore(str(tmp_path / "state.json"))
+    state.set(STATE_KEY, {"video_id": "old#7", "push_url": "srt://old", "session_id": "s"})
+    client = FakeClient(fail_delete=True)
+    video = VideoIngress(
+        client, title="cam", srt_target_file=str(tmp_path / "srt_target.env"), state=state
+    )
+    control = CameraControl(pipeline=CommandPipeline(), video=video)
+
+    control.recover()  # best-effort: fails, keeps the record
+    with pytest.raises(CameraControlError, match="could not register video ingress"):
+        control.start()
+
+    assert [c[0] for c in client.calls] == ["delete", "delete"]
+    assert state.get(STATE_KEY)["video_id"] == "old#7"
+    assert control.snapshot().video_id is None
+
+    client.video.fail_delete = False
+    control.start()  # retry: archive the orphan, then register a fresh ingress
+    assert [c[0] for c in client.calls] == ["delete", "delete", "delete", "create"]
+    assert state.get(STATE_KEY)["video_id"] == control.snapshot().video_id
+
+
 def test_delete_clears_the_ingress_record(tmp_path):
     client, video, control, target = _setup(tmp_path)
     control.start()
