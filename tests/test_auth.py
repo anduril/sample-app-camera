@@ -27,9 +27,13 @@ class BlockingHttp:
         self.entered = threading.Event()
         self.release = threading.Event()
         self.posts = 0
+        self.headers: dict[str, str] = {}
+        self.content = b""
 
-    def post(self, url, *, content, timeout):
+    def post(self, url, *, headers, content, timeout):
         self.posts += 1
+        self.headers = headers
+        self.content = content
         self.entered.set()
         assert self.release.wait(5.0), "test never released the token POST"
         return FakeResponse(200, {"access_token": "fresh", "expires_in": 3600})
@@ -63,6 +67,17 @@ def test_oauth_refresh_stores_the_token():
     assert provider.headers()["authorization"] == "Bearer fresh"
     assert provider.headers()["authorization"] == "Bearer fresh"
     assert http.posts == 1  # cached on the second call
+
+
+def test_token_request_is_a_form_with_the_sandbox_header():
+    http = BlockingHttp()
+    http.release.set()
+    AuthProvider(_oauth_config(), http).headers()
+    assert http.headers == {
+        "content-type": "application/x-www-form-urlencoded",
+        "anduril-sandbox-authorization": "Bearer sbx",
+    }
+    assert http.content == b"grant_type=client_credentials&client_id=id&client_secret=secret"
 
 
 def test_refresh_in_flight_does_not_block_callers_with_a_valid_cache():

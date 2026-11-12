@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+from urllib.parse import urlencode
 
 from ..config import Config
 from ..logging_setup import get_logger
@@ -84,8 +85,13 @@ class AuthProvider:
             "client_id": self._config.client_id,
             "client_secret": self._config.client_secret,
         }
+        headers = {"content-type": "application/x-www-form-urlencoded"}
+        if self._config.sandboxes_token:
+            headers["anduril-sandbox-authorization"] = f"Bearer {self._config.sandboxes_token}"
         try:
-            resp = self._http.post(url, content=body, timeout=30.0)
+            resp = self._http.post(
+                url, headers=headers, content=urlencode(body).encode(), timeout=30.0
+            )
         except Exception as exc:  # network / TLS failures
             raise AuthError(f"OAuth token request failed: {exc}") from exc
 
